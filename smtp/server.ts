@@ -1,7 +1,8 @@
-import { HTTPOptions, HTTPSOptions } from "../deps.ts";
+import type { Socket, SocketHandler } from "bun";
+
+import { getValue } from "@utils/helpers.ts";
+
 import { ConnectionManager } from "./connection.ts";
-import { MessagesDatabase } from "../database/mod.ts";
-import { getValue, isWindowsOrWSL } from "../utils/mod.ts";
 
 /**
  * SMTPOptions lists all options for the SMTPServer.
@@ -14,7 +15,6 @@ export interface SMTPOptions {
   useTLS?: boolean;
   cert?: string;
   key?: string;
-  db: MessagesDatabase;
 }
 
 /**
@@ -27,58 +27,67 @@ export class SMTPServer {
   readonly cert: string;
   readonly key: string;
 
-  private _listener: Deno.Listener | undefined;
-  get listener() {
-    return this._listener;
-  }
 
-  constructor(opts: SMTPOptions) {
-    this.hostname = opts.host || "0.0.0.0";
-    this.port = opts.port || this._getDefaultPort(opts.useTLS);
-    this.cert = getValue(opts, "cert", !!opts.useTLS) as string;
-    this.key = getValue(opts, "key", !!opts.useTLS) as string;
-    this.manager = new ConnectionManager(this.hostname);
+  constructor(opts?: SMTPOptions) {
+    this.hostname = opts?.host || "0.0.0.0";
+    this.port = opts?.port || this.#getDefaultPort(opts?.useTLS);
+    this.cert = getValue(opts ?? {}, "cert", !!opts?.useTLS) as string;
+    this.key = getValue(opts ?? {}, "key", !!opts?.useTLS) as string;
+    this.manager = new ConnectionManager<string>(this.hostname);
 
-    this._connect(opts);
-  }
-
-  private async _connect(opts: SMTPOptions) {
-    this._listener = opts.useTLS
-      ? await Deno.listenTls(this._createHTTPSOptions(opts))
-      : await Deno.listen(this._createHTTPOptions(opts));
+    Bun.listen({
+      hostname: this.hostname,
+      port: this.port,
+      tls: this.#getCertOptions(opts?.useTLS),
+      socket: this.#getSocket(),
+    });
 
     console.log(`🌎 SMTP Server listening at ${this.hostname}:${this.port}.`);
-
-    if (opts.db) {
-      await this.manager.initDatabase(opts.db);
-    }
-
-    for await (const conn of this._listener) {
-      this.manager.addConnection(conn);
-    }
   }
 
-  private _createHTTPOptions(opts: SMTPOptions): HTTPOptions {
-    return {
-      hostname: this.hostname,
-      port: this.port,
-    };
+  #getCertOptions(useTLS?: boolean) {
+    return useTLS ? {
+      cert: Bun.file(this.cert),
+      key: Bun.file(this.key),
+    } : undefined
   }
 
-  private _createHTTPSOptions(opts: SMTPOptions): HTTPSOptions {
-    return {
-      hostname: this.hostname,
-      port: this.port,
-      certFile: this.cert,
-      keyFile: this.key,
-    };
-  }
-
-  private _getDefaultPort(useTLS: boolean | undefined): number {
-    // TODO (william): Check for ports being used and find back up port automatically
-    // Windows doesn't allow binding on 25 so we forward to 2525
-    if (isWindowsOrWSL()) return 2525;
+  #getDefaultPort(useTLS: boolean | undefined): number {
     if (useTLS) return 465;
-    return 25;
+    return 2525;
+  }
+
+  #getSocket(): SocketHandler<string> {
+    const data = (socket: Socket<string>, data: Buffer) => {
+      const message = this.manager.handleConnectionData(socket, data);
+      if (message) {
+        console.log(message);
+        // this.db.saveMessage(message);
+      }
+    };
+    
+    const open = (socket: Socket<string>) => {
+      this.manager.addConnection(socket);
+    };
+
+    const close = (socket: Socket<string>) => {
+      this.manager.removeConnection(socket, 'Closed by client.');
+    };
+
+    const error = (socket: Socket<string>, error: Error) => {
+      this.manager.removeConnection(socket, error.message);
+    };
+
+    const timeout = (socket: Socket<string>) => {
+      this.manager.removeConnection(socket, 'Socket timed out');
+    };
+
+    return {
+      data,
+      open,
+      close,
+      error,
+      timeout
+    }
   }
 }

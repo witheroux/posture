@@ -22,6 +22,15 @@
 	  // Some stricter flags
 	  "noUnusedLocals": true,
 	  "noUnusedParameters": true,
-	  "noPropertyAccessFromIndexSignature": true
-	}
-  }
+	  "noPropertyAccessFromIndexSignature": true,
+
+    "paths": {
+      "@utils/*": ["./utils/*"],
+      "@configuration/*": ["./configuration/*"],
+      "@smtp/*": ["./smtp/*"],
+      "@database/*": ["./database/*"],
+      "@app/*": ["./app/*"],
+      "@client/*": ["./client/*"],
+    }
+	},
+}

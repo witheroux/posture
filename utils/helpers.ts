@@ -1,14 +1,12 @@
-import { blue, red, yellow } from "../deps.ts";
+import { blue, red, yellow } from "./print";
 
 export function getValue<T, K extends keyof T>(
   opts: T,
   key: K,
-  isMandatory: boolean,
+  isMandatory?: boolean,
 ): T[K] {
   if (!opts[key] && isMandatory) {
-    throw new Deno.errors.BadResource(
-      `Key ${key} is mandatory for this object`,
-    );
+    throw new Error(`Key ${String(key)} is mandatory for this object`)
   }
 
   return opts[key];
@@ -36,22 +34,8 @@ export const log = {
   },
 };
 
-export function isWindowsOrWSL() {
-  const release = Deno.osRelease();
-
-  if (Deno.build.os === "windows") return true;
-
-  if (release.toLowerCase().includes("microsoft")) return true;
-
-  try {
-    const version = Deno.readTextFileSync("/proc/version");
-    return version.toLowerCase().includes("microsoft");
-  } catch (e) {
-    return false;
-  }
-}
-
 export class UTF8Transcoder {
+
   static encoder = new TextEncoder();
   static decoder = new TextDecoder();
 

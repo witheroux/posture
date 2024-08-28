@@ -1,4 +1,4 @@
-import { isValidAddress } from "../utils/mod.ts";
+import { isValidAddress } from "@utils/helpers.ts";
 
 type CommandResponse = {
   code?: number;
@@ -266,7 +266,7 @@ export class CommandHandler {
     };
   }
 
-  private _start(command: Command, data: string): CommandResponse {
+  private _start(command: Command, _data: string): CommandResponse {
     const isReset = command === Command.RSET;
     const isExtendedHello = command === Command.EHLO;
     let isNew = false;

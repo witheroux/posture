@@ -16,8 +16,8 @@ export class Configuration {
   }
 
   static async setConfigWithPath(configPath: string) {
-    const data = await Deno.readTextFile(configPath);
-    const json: unknown = JSON.parse(data);
+    const file = Bun.file(configPath);
+    const json: unknown = await file.json();
     this.setConfig(json as ConfigurationOptions);
   }
 
