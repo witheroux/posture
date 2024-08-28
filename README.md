@@ -1,48 +1,32 @@
 # Posture
 
-Posture is a simple configurable mock SMTP server to test your emails built with Deno. It is not meant to actually deliver anything. This server was designed only for receiving and saving SMTP commands for development or testing purposes.
+Posture is a simple configurable mock SMTP server to test your emails built with Bun. It is not meant to actually deliver anything. This server was designed only for receiving and saving SMTP commands for development or testing purposes.
 
 The SMTP server of this project implements the relevant parts of [RFC 2821](https://tools.ietf.org/html/rfc2821) to the best of my capacity/desire to for this project. To see what is implemented, you can peep [the implementation list](#implementation-details). If there are certain parts of the standard that you need that aren't supported or don't work as they should, feel free to make a PR or file an issue!
 
 ## How to use
 
 ```sh
-$ deno install --allow-net --allow-read --allow-write --allow-env --allow-plugin --unstable path/to/repo/app.ts
+$ bun install path/to/repo/app.ts
 ```
-
-I don't think I need to tell you why we need net access. As for the other ones:
-
-- **read** for the config file and SQLite if you happen to use that and serving static files for the front-end app;
-- **write** to use SQLite or MongoDB (Because of the MongoDB plugin that needs to be written to disk);
-- **env** to allow access to environment variables;
-- **unstable** for plugins for MongoDB (deno_mongo through denodb) and for bundling the client app;
-- **plugin** for MongoDB plugin (deno_mongo through denodb);
-
-Feel free to restrict allows such as read, write, env and plugin to the necessary paths.
 
 ## Dependencies
 
-- Client: [React](https://reactjs.org)
-- API: [Oak](https://deno.land/x/oak)
+- Client: TBD
+- API: TBD
 - SMTP: None.
-- Database: [DenoDB](https://deno.land/x/denodb)
+- Database: TBD
 
 ## Supported Databases
 
-- MongoDB
-- PostgreSQL
-- MySQL
-- SQLite3
+- TBD
 
 ## Development
 
-### Denon
-
-A simple Denon config is available to run the project in development. It was only
-tested with Denon@2.4.7.
+This is bun, so everything is ready to rock and roll with a single command.
 
 ```bash
-denon start
+bun run --watch path/to/repo/app.ts
 ```
 
 ### Testing
